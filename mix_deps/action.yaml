@@ -1,0 +1,44 @@
+name: mix_deps
+description: Runs `mix deps.get` and caches the dependencies.
+branding:
+  icon: "arrow-down"
+  color: "purple"
+
+inputs:
+  erlang-version:
+    description: Erlang version to use.
+    required: true
+    type: string
+  elixir-version:
+    description: Elixir version to use.
+    required: true
+    type: string
+  path:
+    description: Path to the root of the Mix project.
+    required: false
+    type: string
+    default: .
+
+runs:
+  using: composite
+  steps:
+    - name: Cache
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ inputs.path }}/_build
+          ${{ inputs.path }}/deps
+        key: ${{ runner.os }}-erlang-${{ inputs.erlang-version }}-elixir-${{ inputs.elixir-version }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-erlang-${{ inputs.erlang-version }}-elixir-${{ inputs.elixir-version }}-mix-
+    - name: Download dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: mix deps.get
+      working-directory: ${{ inputs.path }}
+      shell: bash
+    - name: Compile dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: mix deps.compile
+      working-directory: ${{ inputs.path }}
+      shell: bash

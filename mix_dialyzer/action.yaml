@@ -1,0 +1,46 @@
+name: mix_dialyzer
+description: Runs `mix dialyzer` and caches the the folder containing your PLT files.
+branding:
+  icon: "arrow-down"
+  color: "purple"
+
+inputs:
+  erlang-version:
+    description: Erlang version to use
+    required: true
+    type: string
+  elixir-version:
+    description: Elixir version to use
+    required: true
+    type: string
+  path_dialyzer:
+    description: Path to the folder containing your PLT files relative to the Mix project root.
+    required: false
+    type: string
+    default: dialyzer
+  path:
+    description: Path to the root of your Mix project.
+    required: false
+    type: string
+    default: .
+  args:
+    description: Arguments to pass to `mix dialyzer`.
+    required: false
+    type: string
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ inputs.path }}/${{ inputs.path_dialyzer }}
+        key: ${{ runner.os }}-erlang-${{ inputs.erlang-version }}-elixir-${{ inputs.elixir-version }}-dialyzer-${{ hashFiles('**/mix.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-erlang-${{ inputs.erlang-version }}-elixir-${{ inputs.elixir-version }}-dialyzer-
+    - name: Dialyzer
+      run: mix dialyzer ${{ inputs.args }}
+      working-directory: ${{ inputs.path }}
+      shell: bash
